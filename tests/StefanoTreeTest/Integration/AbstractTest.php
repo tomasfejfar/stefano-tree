@@ -728,4 +728,20 @@ abstract class AbstractTest
         $expectedDataSet = $this->createMySQLXMLDataSet(__DIR__ . '/_files/NestedSet/testUpdateNode-1.xml');
         $this->assertDataSetsEqual($expectedDataSet, $dataSet);        
     }
+
+    public function testUpdateSpecialSelect() {
+        $select = new \Zend_Db_Select();
+        $select->where('unrelated_id => 1');
+        //var_dump($this->treeAdapter->getAdapter()->setDefaultDbSelect($select));
+        $db = $this->getPDODbConnection();
+        $db->query('ALTER TABLE `tree_traversal` ADD COLUMN `unrelated_id` INT(11) NULL DEFAULT 1 AFTER `level`;');
+        $db->query('UPDATE `tree_traversal` SET `unrelated_id` = 2 WHERE id = 20;');
+        $return = $this->treeAdapter
+            ->moveNodePlacementChildTop(21, 18);
+
+        $dataSet = $this->getConnection()->createDataSet(array('tree_traversal'));
+        $this->assertDataSetsEqual($this->getDataSet(), $dataSet, 'Source node is in required position');
+        $this->assertTrue($return);
+        $db->query('ALTER TABLE `tree_traversal` DROP COLUMN `unrelated_id`;');
+    }
 }
